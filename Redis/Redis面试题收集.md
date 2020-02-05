@@ -1049,7 +1049,6 @@ Redis 4.0 提供了一个限流 Redis 模块，名称为 redis-cell，该模块�
 > - [为什么 Redis 集群有 16384 个槽](https://www.cnblogs.com/rjzheng/p/11430592.html)
 > - [分布式缓存 Redis 之 Pipeline（管道）](https://blog.csdn.net/u011489043/article/details/78769428)
 > - [你真的懂 Redis 事务吗？](https://cloud.tencent.com/developer/article/1189074)
-
 > - [redis 一个实例能存多少 key，key 与 value 最大是多少？](https://blog.csdn.net/u011383596/article/details/80728241)
 > - [Redis 应用-异步消息队列与延时队列](https://juejin.im/post/5cee4f59f265da1bb679faef)
 > - [Redis 应用-分布式锁](https://juejin.im/post/5cee35d6f265da1b5f2637ae)
