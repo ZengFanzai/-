@@ -500,7 +500,7 @@ cat data.txt | redis-cli --pipe
 
 首先要明白，无论是 RDB 还是 AOF，持久化的开启都是要付出性能方面的代价的。
 
-对于 RDB，一方面**bgsave**在进行 fork 操作时 Redis 主进程会阻塞，另一方面，子进程向硬盘写数据也会带来 IO 压力；对于 AOF，向硬盘写数据的频率大大提高（everysec 策略下为秒级），IO 压力更大，设置肯能造成 AOF 追加阻塞文件。此外，AOF 文件的重写与 RDB 的 basave 类似，会有 fork 时的阻塞和子进程的 IO 压力问题。相对来说，由于 AOF 向硬盘中写数据的频率更高，因此对 Redis 主进程性能的影响会更大。
+对于 RDB，一方面**bgsave**在进行 **fork 操作时** Redis 主进程会阻塞，另一方面，子进程向硬盘写数据也会带来 IO 压力；对于 AOF，向硬盘写数据的频率大大提高（everysec 策略下为秒级），IO 压力更大，设置肯能造成 AOF 追加阻塞文件。此外，AOF 文件的重写与 RDB 的 bgsave 类似，会有 fork 时的阻塞和子进程的 IO 压力问题。相对来说，由于 AOF 向硬盘中写数据的频率更高，因此对 Redis 主进程性能的影响会更大。
 
 在实际生产环境中，根据**数据量**、**应用对数据的安全要求**、**预算限制**等不同情况，会有各种各样的持久化策略；如完全不使用任何持久化，使用 RDB 或 AOF 一种，或同时开启 RDB 和 AOF 持久化等。此外，持久化的选择必须与**Redis 的主从策略一起考虑**，因为主从复制与持久化同样具有数据备份的功能，而且主机 master 和从机 slave 可以独立的选择持久化方案。
 
@@ -685,7 +685,7 @@ Redisson、Jedis、lettuce 等等，官方推荐使用 Redisson。
 
 ## Redis 和 Redisson 有什么关系?
 
-Redisson 是一个高级的分布式协调 Redis 客服端，能帮助用户在分布式环境中轻松实现一些 Java 的对象 (Bloom filter, BitSet, Set, SetMultimap, ScoredSortedSet, SortedSet, Map, ConcurrentMap, List, ListMultimap, Queue, BlockingQueue, Deque, BlockingDeque, Semaphore, Lock, ReadWriteLock, AtomicLong, CountDownLatch, Publish / Subscribe, HyperLogLog)。
+Redisson 是一个高级的分布式协调 Redis 客户端，能帮助用户在分布式环境中轻松实现一些 Java 的对象 (Bloom filter, BitSet, Set, SetMultimap, ScoredSortedSet, SortedSet, Map, ConcurrentMap, List, ListMultimap, Queue, BlockingQueue, Deque, BlockingDeque, Semaphore, Lock, ReadWriteLock, AtomicLong, CountDownLatch, Publish / Subscribe, HyperLogLog)。
 
 ---
 
