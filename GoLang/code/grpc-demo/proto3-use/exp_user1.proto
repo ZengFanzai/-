@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+package foo.bar;
+
+message ErrorStatus {
+    string message = 1;
+    repeated google.protobuf.Any details = 2;
+    bytes test = 3;
+}
+
+message SampleMessage {
+    oneof test_oneof {
+        string name = 1;
+        ErrorStatus sub_message = 2;
+    }
+}
+
+message Info {
+    //field number range [1,2^29-1],不能使用[19000,19999],这些是保留字段号
+    //1到15的范围需要一个字节进行编码
+    //16打2047需要两个字节，对常出现的字段使用1到15
+    string field1 = 1;
+    string field2 = 2;
+    int32 field3 = 3;
+    string field4 = 4;
+    string field5 = 5;
+    string field6 = 6;
+    string field7 = 7;
+    string field8 = 8;
+    string field9 = 9;
+    string field10 = 10;
+    repeated string field11 = 11;
+}
+
+message SearchRequest {
+    string query = 1;
+    int32 page_number = 2;
+    int32 result_per_page = 3;
+    enum Corpus {
+        UNIVERSAL = 0;
+        WEB = 1;
+        IMAGES = 2;
+        LOCAL = 3;
+        NEWS = 4;
+        PRODUCTS = 5;
+        VIDEO = 6;
+    }
+    Corpus corpus = 4;
+    EnumAllowingAlias enum = 5;
+}
+
+message SearchRequest1 {
+    SearchRequest.Corpus src = 1;
+}
+
+enum EnumAllowingAlias {
+    option allow_alias = true;
+    UNKNOWN = 0;
+    STARTED = 1;
+    RUNNING = 1;
+}
+
+//enum EnumNotAllowingAlias {
+//    UNKNOWN = 0;
+//    STARTED = 1;
+//    //    RUNNING = 1;  // Uncommenting this line will cause a compile error inside Google and a warning message outside.
+//}
+
+message MapUse {
+    map<string, EnumAllowingAlias> projects = 1;
+}
