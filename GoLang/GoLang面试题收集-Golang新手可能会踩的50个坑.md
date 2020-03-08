@@ -27,7 +27,7 @@
 		- [对内建数据结构的操作并不是同步的](#%e5%af%b9%e5%86%85%e5%bb%ba%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84%e7%9a%84%e6%93%8d%e4%bd%9c%e5%b9%b6%e4%b8%8d%e6%98%af%e5%90%8c%e6%ad%a5%e7%9a%84)
 		- [range 迭代 string 得到的值](#range-%e8%bf%ad%e4%bb%a3-string-%e5%be%97%e5%88%b0%e7%9a%84%e5%80%bc)
 		- [range 迭代 map](#range-%e8%bf%ad%e4%bb%a3-map)
-		- [switch 中 failthrough 语句](#switch-%e4%b8%ad-failthrough-%e8%af%ad%e5%8f%a5)
+		- [switch 中 fallthrough 语句](#switch-%e4%b8%ad-fallthrough-%e8%af%ad%e5%8f%a5)
 		- [自增和自减运算](#%e8%87%aa%e5%a2%9e%e5%92%8c%e8%87%aa%e5%87%8f%e8%bf%90%e7%ae%97)
 		- [按位取反](#%e6%8c%89%e4%bd%8d%e5%8f%96%e5%8f%8d)
 		- [运算符的优先级](#%e8%bf%90%e7%ae%97%e7%ac%a6%e7%9a%84%e4%bc%98%e5%85%88%e7%ba%a7)
@@ -733,7 +733,7 @@ func main() {
 }
 ```
 
-### switch 中 failthrough 语句
+### switch 中 fallthrough 语句
 
 `switch` 语句中的 `case` 代码块会默认带上 break，但可以使用 `fallthrough` 来强制执行下一个 case 代码块。
 
