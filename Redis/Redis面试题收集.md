@@ -402,7 +402,7 @@ watch 这里表示监控该 key 值，后面的事务是有条件的执行，如
 
 **redis 提供 6 种数据淘汰策略：(内存大小达到 server.maxmemory 时)**
 
-1. noeviction: 新写入操作会报错。
+1. no-eviction: 禁止驱逐数据。
 2. allkeys-lru：在键空间（server.db[i].dict）中，移除最近最少使用的 key（这个是最常用的）。
 3. allkeys-random：在键空间（server.db[i].dict）中，随机移除某个 key。
 4. volatile-lru：在设置了过期时间的键空间（server.db[i].expires）中，移除最近最少使用的 key。
