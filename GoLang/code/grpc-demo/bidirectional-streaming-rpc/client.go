@@ -4,7 +4,7 @@ import (
 	"context"
 	"google.golang.org/grpc"
 	"log"
-	pb "src/bidirectional-streaming-rpc/hello"
+	pb1 "src/bidirectional-streaming-rpc/hello"
 	"strconv"
 	"sync"
 )
@@ -15,17 +15,17 @@ func Send(wg *sync.WaitGroup) {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-	c := pb.NewGreeterClient(conn)
+	c := pb1.NewGreeterClient(conn)
 	stream, err := c.SayHello(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for i := 0; i < 100; i++ {
-		err = stream.Send(&pb.HelloRequest{Name: "world" + strconv.Itoa(i)})
-		if err != nil {
-			log.Printf("failed to send: %v", err)
-		}
+			err = stream.Send(&pb1.HelloRequest{Name: "world" + strconv.Itoa(i)})
+			if err != nil {
+				log.Printf("failed to send: %v", err)
+			}
 		reply, err := stream.Recv()
 		if err != nil {
 			log.Printf("failed to recv: %v", err)

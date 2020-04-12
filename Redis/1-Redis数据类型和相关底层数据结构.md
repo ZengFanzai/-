@@ -10,6 +10,8 @@
     - [Sorted Sets](#sorted-sets)
   - [Redis 数据结构和对象](#redis-%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84%e5%92%8c%e5%af%b9%e8%b1%a1)
     - [简单动态字符串(SDS)](#%e7%ae%80%e5%8d%95%e5%8a%a8%e6%80%81%e5%ad%97%e7%ac%a6%e4%b8%b2sds)
+      - [空间预分配(1MB 为)](#%e7%a9%ba%e9%97%b4%e9%a2%84%e5%88%86%e9%85%8d1mb%e4%b8%ba)
+      - [惰性空间释放](#%e6%83%b0%e6%80%a7%e7%a9%ba%e9%97%b4%e9%87%8a%e6%94%be)
       - [重点回顾](#%e9%87%8d%e7%82%b9%e5%9b%9e%e9%a1%be)
     - [链表](#%e9%93%be%e8%a1%a8)
       - [重点回顾](#%e9%87%8d%e7%82%b9%e5%9b%9e%e9%a1%be-1)
@@ -74,7 +76,7 @@
         - [对象共享](#%e5%af%b9%e8%b1%a1%e5%85%b1%e4%ba%ab)
         - [对象空转时长](#%e5%af%b9%e8%b1%a1%e7%a9%ba%e8%bd%ac%e6%97%b6%e9%95%bf)
       - [重点回顾](#%e9%87%8d%e7%82%b9%e5%9b%9e%e9%a1%be-6)
-    - [Redis5.0新特性 streams](#redis50%e6%96%b0%e7%89%b9%e6%80%a7-streams)
+    - [Redis5.0 新特性 streams](#redis50-%e6%96%b0%e7%89%b9%e6%80%a7-streams)
 
 ## Redis 介绍
 
@@ -248,6 +250,25 @@ struct sdshdr {
 ![带有未使用空间的SDS示例](./img/带有未使用空间的SDS示例.png)
 
 SDS 遵循空字符结尾，可以直接重用部分 C 字符串函数库的函数
+
+#### 空间预分配(1MB 为分界线)
+
+空间预分配用于优化 SDS 的字符串增长操作： 当 SDS 的 API 对一个 SDS 进行修改， 并且需要对 SDS 进行空间扩展的时候， 程序不仅会为 SDS 分配修改所必须要的空间， 还会为 SDS 分配额外的未使用空间。
+
+其中， 额外分配的未使用空间数量由以下公式决定：
+
+- 修改后的字符串长度(即 len 的值)小于 1MB，则分配相同长度的未使用空间。这时 SDS len 属性的值将和 free 属性的值相同。如：修改后的 SDS 的 len 为 13bytes，那么分配后的 SDS 的 buf 数组实际长度为 13+13+1=27bytes，其中 1bytes 用于保存空字符。
+- 修改后的 SDS 长度大于等于 1MB，则分配 1MB 的未使用空间。如：修改后的 SDS 的 len 为 30MB，那么程序会分配 1MB 的未使用空间， SDS 的 buf 数组的实际长度将为 30MB+1MB+1byte 。
+
+通过空间预分配策略， Redis 可以减少连续执行字符串增长操作所需的内存重分配次数。
+
+#### 惰性空间释放
+
+惰性空间释放用于优化 SDS 的字符串缩短操作： 当 SDS 的 API 需要缩短 SDS 保存的字符串时， 程序并不立即使用内存重分配来回收缩短后多出来的字节， 而是使用 free 属性将这些字节的数量记录起来， 并等待将来使用。
+
+通过惰性空间释放策略， SDS 避免了缩短字符串时所需的内存重分配操作， 并为将来可能有的增长操作提供了优化。
+
+**与此同时， SDS 也提供了相应的 API ， 让我们可以在有需要时， 真正地释放 SDS 里面的未使用空间， 所以不用担心惰性空间释放策略会造成内存浪费。**
 
 #### 重点回顾
 
@@ -882,7 +903,7 @@ Redis 将这种在特殊情况下产生的连续多次空间扩展操作称之�
 
 ### quicklist(3.2)
 
-quicklist是3.2版本之后新增的基础数据结构，是 redis 自定义的一种复杂数据结构，将**ziplist**和**adlist**结合到了一个数据结构中。主要是作为**list**的基础数据结构。
+quicklist 是 3.2 版本之后新增的基础数据结构，是 redis 自定义的一种复杂数据结构，将**ziplist**和**adlist**结合到了一个数据结构中。主要是作为**list**的基础数据结构。
 
 ```c
 typedef struct quicklistNode {
@@ -892,7 +913,7 @@ typedef struct quicklistNode {
     unsigned int sz;             // ziplist的内存大小
     unsigned int count : 16;     // zpilist中数据项的个数
     unsigned int encoding : 2;   // 1为ziplist 2是LZF压缩存储方式
-    unsigned int container : 2;  
+    unsigned int container : 2;
     unsigned int recompress : 1;   // 压缩标志, 为1 是压缩
     unsigned int attempted_compress : 1; // 节点是否能够被压缩,只用在测试
     unsigned int extra : 10; /* more bits to steal for future usage */
@@ -908,16 +929,16 @@ typedef struct quicklist {
 } quicklist;
 ```
 
-由于quicklist结构包含了压缩表和链表，那么每个quicklistNode的大小就是一个需要仔细考量的点。如果单个quicklistNode存储的数据太多，就会影响插入效率；但是如果单个quicklistNode太小，就会变得跟链表一样造成空间浪费。
+由于 quicklist 结构包含了压缩表和链表，那么每个 quicklistNode 的大小就是一个需要仔细考量的点。如果单个 quicklistNode 存储的数据太多，就会影响插入效率；但是如果单个 quicklistNode 太小，就会变得跟链表一样造成空间浪费。
 
-quicklist通过**fill**对单个quicklistNode的大小进行限制：fill可以被赋值为正整数或负整数，当fill为负数时：
+quicklist 通过**fill**对单个 quicklistNode 的大小进行限制：fill 可以被赋值为正整数或负整数，当 fill 为负数时：
 
-- -1：单个节点最多存储4kb
-- -2：单个节点最多存储8kb
-- -3：单个节点最多存储16kb
-- -4：单个节点最多存储32kb
-- -5：单个节点最多存储64kb
-- 为正数时，表示单个节点最大允许的元素个数，最大为32768个
+- -1：单个节点最多存储 4kb
+- -2：单个节点最多存储 8kb
+- -3：单个节点最多存储 16kb
+- -4：单个节点最多存储 32kb
+- -5：单个节点最多存储 64kb
+- 为正数时，表示单个节点最大允许的元素个数，最大为 32768 个
 
 ```c
 #define FILL_MAX (1 << 15)  // 32768
@@ -931,17 +952,17 @@ void quicklistSetFill(quicklist *quicklist, int fill) { // set ziplist的单个�
 }
 ```
 
-在 redis 内部使用中，默认的最大单节点数据量设置是-2，也就是8kb
+在 redis 内部使用中，默认的最大单节点数据量设置是-2，也就是 8kb
 
 #### 回顾
 
-quicklist除了常用的增删改查外还提供了merge、将ziplist转换为quicklist等api，这里就不详解了，可以具体查看quicklist.h和quicklist.c文件。
+quicklist 除了常用的增删改查外还提供了 merge、将 ziplist 转换为 quicklist 等 api，这里就不详解了，可以具体查看 quicklist.h 和 quicklist.c 文件。
 
-1. quicklist是 redis 在ziplist和adlist两种数据结构的基础上融合而成的一个实用的复杂数据结构
-2. quicklist在3.2之后取代adlist和ziplist作为list的基础数据类型
-3. quicklist的大部分api都是直接复用ziplist
-4. quicklist的单个节点最大存储默认为8kb
-5. quicklist提供了基于lzf算法的压缩api，通过将不常用的中间节点数据压缩达到节省内存的目的
+1. quicklist 是 redis 在 ziplist 和 adlist 两种数据结构的基础上融合而成的一个实用的复杂数据结构
+2. quicklist 在 3.2 之后取代 adlist 和 ziplist 作为 list 的基础数据类型
+3. quicklist 的大部分 api 都是直接复用 ziplist
+4. quicklist 的单个节点最大存储默认为 8kb
+5. quicklist 提供了基于 lzf 算法的压缩 api，通过将不常用的中间节点数据压缩达到节省内存的目的
 
 ### 对象
 
@@ -1513,12 +1534,11 @@ redis> OBJECT IDLETIME msg
 - `Redis 会共享值为 0 到 9999 的字符串对象。`
 - 对象会记录自己的最后一次被访问的时间， 这个时间可以用于计算对象的空转时间。
 
-### Redis5.0新特性 streams
+### Redis5.0 新特性 streams
 
 TODO：
 
 > **参考来源**
 >
 > > - [Redis 设计与实现](http://redisbook.com/)
-> > - [面试中关于 Redis 的问题看这篇就够了](https://juejin.im/post/5ad6e4066fb9a028d82c4b66)
-> > -[redis源码解读(六):基础数据结构之quicklist](http://czrzchao.com/redisSourceQuicklist#quicklist)
+> > - [面试中关于 Redis 的问题看这篇就够了](https://juejin.im/post/5ad6e4066fb9a028d82c4b66) -[redis 源码解读(六):基础数据结构之 quicklist](http://czrzchao.com/redisSourceQuicklist#quicklist)
