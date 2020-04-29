@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/png"
 	_ "image/png"
@@ -11,7 +10,6 @@ import (
 )
 
 func main() {
-	fmt.Println(os.Getwd())
 	in, err := os.Open("./grape.png")
 	if err != nil {
 		log.Fatal("open file err:", err)
