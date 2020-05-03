@@ -31,7 +31,7 @@ func resizeBilinear(img image.Image, width, height int) image.Image {
 			// green element
 			// Yg = Ag(1-w)(1-h) + Bg(w)(1-h) + Cg(h)(1-w) + Dg(wh)
 			green := float64(g>>8)*(1-x_diff)*(1-y_diff) + float64(g1>>8)*(x_diff)*(1-y_diff) + float64(g2>>8)*(y_diff)*(1-x_diff) + float64(g3>>8)*(x_diff*y_diff)
-			// red element
+			// blue element
 			// Yr = Ar(1-w)(1-h) + Br(w)(1-h) + Cr(h)(1-w) + Dr(wh)
 			blue := float64(b>>8)*(1-x_diff)*(1-y_diff) + float64(b1>>8)*(x_diff)*(1-y_diff) + float64(b2>>8)*(y_diff)*(1-x_diff) + float64(b3>>8)*(x_diff*y_diff)
 
@@ -66,6 +66,6 @@ func main() {
 	}
 	defer out.Close()
 
-	result := resizeBilinear(img, 162*2, 179*2)
+	result := resizeBilinear(img, 162*4, 179*4)
 	_ = png.Encode(out, result)
 }
